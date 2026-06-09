@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>찬송가</title>
+
+<style>
+
+body{
+    font-family:sans-serif;
+    margin:10px;
+    max-width:600px;
+    margin-left:auto;
+    margin-right:auto;
+}
+input{
+    width:100%;
+    height:50px;
+    font-size:22px;
+    box-sizing:border-box;
+}
+button{
+    width:23%;
+    height:40px;
+    font-size:14px;
+    margin-top:2px;
+}
+@media (max-width:600px){
+
+    button{
+        height:45px;
+        font-size:18px;
+    }
+}
+#lyrics{
+    white-space:pre-wrap;
+    margin-top:25px;
+    font-size:22px;
+    line-height:0.7;
+}
+
+#title{
+    font-size:25px;
+    font-weight:bold;
+    text-align:center;
+    margin-top:15px;
+    margin-bottom:15px;
+    color:#003366;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>찬송가</h2>
+
+<input
+    id="number"
+    type="text"
+    placeholder="번호 또는 제목"
+    enterkeyhint="search"
+    onkeydown="
+        if(event.key==='Enter'){
+            showHymn();}">
+
+<div>
+
+<button onclick="prevHymn()">
+◀ 이전곡
+</button>
+
+<button onclick="nextHymn()">
+다음곡 ▶
+</button>
+
+<button onclick="playHymn()">
+🎵 찬송 듣기
+</button>
+
+<button onclick="stopHymn()">
+■ 정지
+</button>
+
+</div>
+
+<div id="title"></div>
+<div id="lyrics"></div>
+<div id="resultList"></div>
+
+<img
+   
+    id="score"
+       style="
+        width:600px;
+        max-width:100%;
+        height:auto;
+        display:block;
+        margin:20px auto;
+    "
+    onerror="this.style.display='none'">
+
+<script>
+
+let hymnText = "";
+let currentNumber = 0;
+let audio = null;
+
+fetch("hymns.txt")
+.then(response => response.text())
+.then(text => {
+    hymnText = text;
+});
+
+function showHymn(){
+
+if(audio){
+
+    audio.pause();
+
+    audio.currentTime = 0;
+}
+
+    const input =
+        document
+        .getElementById("number")
+        .value
+        .trim();
+
+    if(!input) return;
+
+    // 숫자 검색
+
+    if(!isNaN(input)){
+
+        const num = parseInt(input);
+
+        currentNumber = num;
+
+        const regex =
+            new RegExp(
+                num + "\\.([\\s\\S]*?)(?=\\n\\d+\\.|$)"
+            );
+
+        const match =
+            hymnText.match(regex);
+
+      if(match){
+
+    let hymnTextHtml =
+    (num + "." + match[1])
+    .replace(
+        /후렴\s*:?([^\n]*)/g,
+        '<span style="color:#4CAF50;font-weight:bold;">후렴 :$1</span>'
+    )
+    .replace(/\n/g,"<br>");
+
+document
+.getElementById("lyrics")
+.innerHTML =
+    hymnTextHtml;
+
+      document
+      .getElementById("resultList")
+      .innerHTML = "";
+
+      const fileName =
+        "images/hymn" +
+        String(num).padStart(3,"0")
+        + ".jpg";
+
+      console.log("파일명=", fileName);
+
+      const score =
+       document.getElementById("score");
+
+     score.style.display = "block";
+
+    score.src = fileName;
+}else{
+
+            document
+            .getElementById("lyrics")
+            .innerText =
+            "찬송가 없음";
+        }
+
+        return;
+    }
+
+   // 가사 전체 검색
+
+const keyword =
+    input.replace(/\s/g,"");
+
+let results = [];
+
+for (const match of hymnText.matchAll(/(\d+)\.\s([\s\S]*?)(?=\n\d+\.|$)/g)) {
+
+    const number = match[1];
+    const hymn = match[2];
+
+    if (
+        hymn
+            .replace(/\s/g,"")
+            .includes(keyword)
+    ) {
+
+        const title =
+            hymn
+                .split("\n")[0]
+                .trim();
+
+        results.push({
+            number,
+            title
+        });
+    }
+}
+
+    if(results.length === 0){
+
+        document
+        .getElementById("lyrics")
+        .innerText =
+        "검색 결과 없음";
+
+        document
+        .getElementById("resultList")
+        .innerHTML = "";
+
+        return;
+    }
+
+    let html = "";
+
+    results.forEach(item=>{
+
+        html += `
+        <div
+        style="
+            cursor:pointer;
+            padding:5px;
+            border-bottom:1px solid #ddd;"
+        onclick="openHymn(${item.number})">
+
+        ${item.number}. ${item.title}
+
+        </div>
+        `;
+    });
+
+    document
+    .getElementById("lyrics")
+    .innerText =
+    "검색 결과";
+
+    document
+    .getElementById("resultList")
+    .innerHTML =
+    html;
+}
+
+function prevHymn(){
+
+    if(currentNumber <= 1)
+        return;
+
+    currentNumber--;
+
+    document
+    .getElementById("number")
+    .value =
+    currentNumber;
+
+    showHymn();
+}
+
+function nextHymn(){
+
+    currentNumber++;
+
+    document
+    .getElementById("number")
+    .value =
+    currentNumber;
+
+    showHymn();
+}
+
+function openHymn(number){
+
+    currentNumber = number;
+
+    const regex =
+        new RegExp(
+            number + "\\.([\\s\\S]*?)(?=\\n\\d+\\.|$)"
+        );
+
+    const match =
+        hymnText.match(regex);
+
+    if(match){
+
+        document
+
+        .getElementById("lyrics")
+        .innerText =
+        number + "." + match[1];
+
+        const fileName =
+            "images/hymn" +
+            String(number).padStart(3,"0")
+            + ".jpg";
+
+        const score =
+            document.getElementById("score");
+
+        score.style.display = "block";
+
+        score.src = fileName;
+    }
+}
+
+function playHymn(){
+
+    if(currentNumber <= 0){
+
+        alert("먼저 찬송가를 선택하세요.");
+
+        return;
+    }
+
+    const fileName =
+        "mp3/" +
+        String(currentNumber)
+            .padStart(3,"0")
+        + ".mp3";
+
+    if(audio){
+
+        audio.pause();
+    }
+
+    audio = new Audio(fileName);
+
+    audio.play()
+        .catch(() => {
+
+            alert(
+                "음원 파일이 없습니다."
+            );
+        });
+}
+
+function stopHymn(){
+
+    if(audio){
+
+        audio.pause();
+
+        audio.currentTime = 0;
+    }
+}
+
+</script>
+
+</body>
+</html>
