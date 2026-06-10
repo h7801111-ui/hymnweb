@@ -295,6 +295,10 @@ function openHymn(number){
 
     currentNumber = number;
 
+    document
+    .getElementById("resultList")
+    .innerHTML = "";
+
     const regex =
         new RegExp(
             number + "\\.([\\s\\S]*?)(?=\\n\\d+\\.|$)"
@@ -305,11 +309,18 @@ function openHymn(number){
 
     if(match){
 
-        document
+        let hymnTextHtml =
+        (number + "." + match[1])
+        .replace(
+            /후렴\s*:?([^\n]*)/g,
+            '<span style="color:#4CAF50;font-weight:bold;">후렴 :$1</span>'
+        )
+        .replace(/\n/g,"<br>");
 
+        document
         .getElementById("lyrics")
-        .innerText =
-        number + "." + match[1];
+        .innerHTML =
+        hymnTextHtml;
 
         const fileName =
             "images/hymn" +
@@ -323,9 +334,7 @@ function openHymn(number){
 
         score.src = fileName;
     }
-}
-
-function playHymn(){
+}function playHymn(){
 
     if(currentNumber <= 0){
 
