@@ -63,7 +63,7 @@ button{
 <input
     id="number"
     type="text"
-    placeholder="번호 또는 제목"
+    placeholder="찬송가 장 또는 가사 입력"
     enterkeyhint="search"
     onkeydown="
         if(event.key==='Enter'){
@@ -120,7 +120,7 @@ if(audio){
 
     const input =
         document
-        .getElementById("number")
+        document.getElementById("number").blur();
         .value
         .trim();
 
