@@ -171,6 +171,9 @@ document
      score.style.display = "block";
 
     score.src = fileName;
+
+    document.getElementById("number").blur();
+          
 }else{
 
             document
@@ -253,6 +256,9 @@ for (const match of hymnText.matchAll(/(\d+)\.\s([\s\S]*?)(?=\n\d+\.|$)/g)) {
     .getElementById("resultList")
     .innerHTML =
     html;
+
+    document.getElementById("number").blur();
+    
 }
 
 function prevHymn(){
