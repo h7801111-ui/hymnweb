@@ -291,6 +291,36 @@ function nextHymn(){
     showHymn();
 }
 
+function prevHymn1(){
+
+    if(currentNumber <= 1)
+        return;
+
+    currentNumber--;
+
+    document
+    .getElementById("number")
+    .value =
+    currentNumber;
+
+    showHymn();
+}
+
+function nextHymn1(){
+
+    if(currentNumber >= 645)
+        return;
+
+    currentNumber++;
+
+    document
+    .getElementById("number")
+    .value =
+    currentNumber;
+
+    showHymn();
+}
+  
 function openHymn(number){
 
     currentNumber = number;
@@ -407,12 +437,12 @@ function handleSwipe(){
 
     if(distance > 100){
 
-        prevHymn();
+        prevHymn1();
     }
 
     if(distance < -100){
 
-        nextHymn();
+        nextHymn1();
     }
 }
     
