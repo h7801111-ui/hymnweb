@@ -263,10 +263,10 @@ for (const match of hymnText.matchAll(/(\d+)\.\s([\s\S]*?)(?=\n\d+\.|$)/g)) {
 
 function prevHymn(){
 
-    if(currentNumber <= 1)
-        return;
-
-    currentNumber--;
+    if(currentNumber <= 10)
+        currentNumber = 1;
+    else
+        currentNumber -= 10;
 
     document
     .getElementById("number")
@@ -278,7 +278,10 @@ function prevHymn(){
 
 function nextHymn(){
 
-    currentNumber++;
+    currentNumber+=10;
+
+     if(currentNumber > 645)
+        currentNumber = 645;
 
     document
     .getElementById("number")
