@@ -372,6 +372,47 @@ function stopHymn(){
     }
 }
 
+// ===== 스와이프 기능 =====
+
+let touchStartX = 0;
+let touchEndX = 0;
+
+document.addEventListener(
+    "touchstart",
+    function(e){
+        touchStartX =
+            e.changedTouches[0].screenX;
+    },
+    false
+);
+
+document.addEventListener(
+    "touchend",
+    function(e){
+        touchEndX =
+            e.changedTouches[0].screenX;
+
+        handleSwipe();
+    },
+    false
+);
+
+function handleSwipe(){
+
+    const distance =
+        touchEndX - touchStartX;
+
+    if(distance > 100){
+
+        prevHymn();
+    }
+
+    if(distance < -100){
+
+        nextHymn();
+    }
+}
+    
 </script>
 
 </body>
