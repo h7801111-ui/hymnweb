@@ -435,12 +435,12 @@ function handleSwipe(){
     const distance =
         touchEndX - touchStartX;
 
-    if(distance > 100){
+    if(distance > 200){
 
         prevHymn1();
     }
 
-    if(distance < -100){
+    if(distance < -200){
 
         nextHymn1();
     }
