@@ -408,13 +408,18 @@ function stopHymn(){
 // ===== 스와이프 기능 =====
 
 let touchStartX = 0;
+let touchStartY = 0;
 let touchEndX = 0;
+let touchEndY = 0;
 
 document.addEventListener(
     "touchstart",
     function(e){
         touchStartX =
             e.changedTouches[0].screenX;
+
+        touchStartY =
+            e.changedTouches[0].screenY;
     },
     false
 );
@@ -425,6 +430,9 @@ document.addEventListener(
         touchEndX =
             e.changedTouches[0].screenX;
 
+        touchEndY =
+            e.changedTouches[0].screenY;
+
         handleSwipe();
     },
     false
@@ -432,21 +440,25 @@ document.addEventListener(
 
 function handleSwipe(){
 
-    const distance =
+    const deltaX =
         touchEndX - touchStartX;
 
-    if(distance > 170){
+    const deltaY =
+        Math.abs(
+            touchEndY - touchStartY
+        );
+
+    // 세로 이동이 크면 스와이프 무시
+    if(deltaY > 50)
+        return;
+
+    if(deltaX > 170){
 
         prevHymn1();
     }
 
-    if(distance < -170){
+    if(deltaX < -170){
 
         nextHymn1();
     }
 }
-    
-</script>
-
-</body>
-</html>
