@@ -266,7 +266,7 @@ function prevHymn(){
     if(currentNumber <= 10)
         currentNumber = 1;
     else
-        currentNumber -= 10;
+        currentNumber -= 1;
 
     document
     .getElementById("number")
@@ -278,7 +278,7 @@ function prevHymn(){
 
 function nextHymn(){
 
-    currentNumber+=10;
+    currentNumber+=1;
 
      if(currentNumber > 645)
         currentNumber = 645;
@@ -452,12 +452,12 @@ function handleSwipe(){
     if(deltaY > 50)
         return;
 
-    if(deltaX > 200){
+    if(deltaX > 300){
 
         prevHymn1();
     }
 
-    if(deltaX < -200){
+    if(deltaX < -300){
 
         nextHymn1();
     }
