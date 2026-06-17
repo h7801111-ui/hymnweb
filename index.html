@@ -449,15 +449,15 @@ function handleSwipe(){
         );
 
     // 세로 이동이 크면 스와이프 무시
-    if(deltaY > 50)
+    if(deltaY > 70)
         return;
 
-    if(deltaX > 270){
+    if(deltaX > 250){
 
         prevHymn1();
     }
 
-    if(deltaX < -270){
+    if(deltaX < -250){
 
         nextHymn1();
     }
