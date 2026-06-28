@@ -197,22 +197,22 @@ for (const match of hymnText.matchAll(/(\d+)\.\s([\s\S]*?)(?=\n\d+\.|$)/g)) {
     const number = match[1];
     const hymn = match[2];
 
-    if (
+   const searchText =
+    hymn
+        .replace(/후렴\s*:/g,"")
+        .replace(/\s/g,"");
+
+if (searchText.includes(keyword)) {
+
+    const title =
         hymn
-            .replace(/\s/g,"")
-            .includes(keyword)
-    ) {
+            .split("\n")[0]
+            .trim();
 
-        const title =
-            hymn
-                .split("\n")[0]
-                .trim();
-
-        results.push({
-            number,
-            title
-        });
-    }
+    results.push({
+        number,
+        title
+    });
 }
 
     if(results.length === 0){
