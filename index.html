@@ -199,7 +199,8 @@ for (const match of hymnText.matchAll(/(\d+)\.\s([\s\S]*?)(?=\n\d+\.|$)/g)) {
 
    const searchText =
     hymn
-        .replace(/후렴\s*:/g,"")
+         .replace(/후렴/g,"")
+        .replace(/:/g,"")
         .replace(/\s/g,"");
 
 if (searchText.includes(keyword)) {
