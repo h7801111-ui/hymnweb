@@ -100,6 +100,7 @@ button{
 let hymnText = "";
 let currentNumber = 1;
 let audio = null;
+let autoPlay = false;   // true 이면 한 곡이 끝날 때 다음 장을 자동 재생
 
 fetch("hymns.txt")
 .then(response => response.text())
@@ -108,6 +109,9 @@ fetch("hymns.txt")
 });
 
 function showHymn(){
+
+// 직접 검색/이동하면 연속 재생은 중단
+autoPlay = false;
 
 if(audio){
 
@@ -367,7 +371,12 @@ function openHymn(number){
 
         score.src = fileName;
     }
-}function playHymn(){
+}
+
+// ===== 듣기 (연속 재생) =====
+
+// 듣기 버튼: 현재 장부터 정지 버튼을 누를 때까지 다음 장으로 계속 재생
+function playHymn(){
 
     if(currentNumber <= 0){
 
@@ -376,29 +385,76 @@ function openHymn(number){
         return;
     }
 
+    autoPlay = true;
+
+    playCurrent();
+}
+
+// 현재 장(currentNumber)의 음원을 재생
+function playCurrent(){
+
     const fileName =
         "mp3/" +
         String(currentNumber)
             .padStart(3,"0")
         + ".mp3";
 
-    if(audio){
+    // Audio 객체는 한 번만 만들어 재사용 (모바일에서 자동 재생 차단 방지)
+    if(!audio){
 
-        audio.pause();
+        audio = new Audio();
+
+        // 한 곡이 끝나면 다음 장으로
+        audio.addEventListener("ended", playNext);
     }
 
-    audio = new Audio(fileName);
+    audio.src = fileName;
 
     audio.play()
-        .catch(() => {
+        .catch((err) => {
+
+            // 다른 곡으로 바꾸면서 생기는 중단은 무시
+            if(err && err.name === "AbortError")
+                return;
+
+            autoPlay = false;
 
             alert(
-                "음원 파일이 없습니다."
+                currentNumber +
+                "장 음원 파일이 없어 재생을 멈춥니다."
             );
         });
 }
 
+// 다음 장으로 넘어가서 계속 재생
+function playNext(){
+
+    if(!autoPlay) return;
+
+    // 마지막 장이면 종료
+    if(currentNumber >= 803){
+
+        autoPlay = false;
+
+        return;
+    }
+
+    currentNumber++;
+
+    document
+    .getElementById("number")
+    .value =
+    currentNumber;
+
+    // 가사/악보 갱신 (재생은 끊지 않는 openHymn 사용)
+    openHymn(currentNumber);
+
+    playCurrent();
+}
+
 function stopHymn(){
+
+    autoPlay = false;
 
     if(audio){
 
