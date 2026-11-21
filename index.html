@@ -373,83 +373,174 @@ function openHymn(number){
     }
 }
 
-// ===== 듣기 (연속 재생) =====
+// ===== 듣기 (연속 재생, 화면 꺼짐 대응) =====
+
+let nextBlobUrl = null;     // 미리 받아 둔 다음 장 음원 (메모리)
+let nextBlobNumber = 0;
+let currentBlobUrl = null;
+let errorRetry = 0;
+
+function mp3Path(n){
+    return "mp3/" + String(n).padStart(3,"0") + ".mp3";
+}
+
+function setPlaybackState(state){
+    if("mediaSession" in navigator){
+        navigator.mediaSession.playbackState = state;
+    }
+}
+
+function updateMediaSession(){
+    if(!("mediaSession" in navigator)) return;
+    try{
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: currentNumber + "장",
+            artist: "찬송가",
+            album: "찬송가"
+        });
+    }catch(e){}
+}
+
+// 잠금화면/알림창 재생 컨트롤 등록
+function setupMediaSession(){
+    if(!("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    const set = (name, fn) => {
+        try{ ms.setActionHandler(name, fn); }catch(e){}
+    };
+    set("play", () => {
+        autoPlay = true;
+        if(audio && audio.src && audio.paused && !audio.error && !audio.ended){
+            audio.play().catch(() => playCurrent());
+        }else{
+            playCurrent();
+        }
+    });
+    set("pause", () => { if(audio) audio.pause(); });
+    set("stop", () => stopHymn());
+    set("nexttrack", () => skip(1));
+    set("previoustrack", () => skip(-1));
+}
+
+function ensureAudio(){
+    if(audio) return;
+    audio = new Audio();
+    audio.preload = "auto";
+    audio.addEventListener("ended", playNext);
+    audio.addEventListener("playing", () => {
+        errorRetry = 0;
+        setPlaybackState("playing");
+    });
+    audio.addEventListener("pause", () => setPlaybackState("paused"));
+    audio.addEventListener("error", onAudioError);
+    setupMediaSession();
+}
+
+// 로드 실패: 잠깐 뒤 두 번까지 재시도, 그래도 안 되면 정지
+function onAudioError(){
+    if(!autoPlay) return;
+    if(errorRetry >= 2){
+        autoPlay = false;
+        setPlaybackState("paused");
+        if(!document.hidden){
+            alert(currentNumber + "장 음원을 재생할 수 없어 멈춥니다.");
+        }
+        return;
+    }
+    errorRetry++;
+    setTimeout(() => { if(autoPlay) playCurrent(); }, 2000);
+}
+
+// 다음 장 음원을 미리 내려받아 둠 (화면이 꺼져 네트워크가 느려도 끊기지 않게)
+async function preloadNext(){
+    const n = currentNumber + 1;
+    if(n > 803 || nextBlobNumber === n) return;
+    try{
+        const res = await fetch(mp3Path(n));
+        if(!res.ok) return;
+        const blob = await res.blob();
+        if(currentNumber + 1 !== n) return;   // 그 사이 곡이 바뀐 경우
+        if(nextBlobUrl) URL.revokeObjectURL(nextBlobUrl);
+        nextBlobUrl = URL.createObjectURL(blob);
+        nextBlobNumber = n;
+    }catch(e){}
+}
 
 // 듣기 버튼: 현재 장부터 정지 버튼을 누를 때까지 다음 장으로 계속 재생
 function playHymn(){
 
     if(currentNumber <= 0){
-
         alert("먼저 찬송가를 선택하세요.");
-
         return;
     }
 
     autoPlay = true;
-
+    errorRetry = 0;
     playCurrent();
 }
 
 // 현재 장(currentNumber)의 음원을 재생
 function playCurrent(){
 
-    const fileName =
-        "mp3/" +
-        String(currentNumber)
-            .padStart(3,"0")
-        + ".mp3";
+    ensureAudio();
 
-    // Audio 객체는 한 번만 만들어 재사용 (모바일에서 자동 재생 차단 방지)
-    if(!audio){
+    let src = mp3Path(currentNumber);
+    let usedBlob = null;
 
-        audio = new Audio();
-
-        // 한 곡이 끝나면 다음 장으로
-        audio.addEventListener("ended", playNext);
+    // 미리 받아 둔 음원이 있으면 그것을 사용
+    if(nextBlobUrl && nextBlobNumber === currentNumber){
+        src = nextBlobUrl;
+        usedBlob = nextBlobUrl;
+        nextBlobUrl = null;
+        nextBlobNumber = 0;
     }
 
-    audio.src = fileName;
+    audio.src = src;
+
+    if(currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = usedBlob;
+
+    updateMediaSession();
 
     audio.play()
+        .then(() => preloadNext())
         .catch((err) => {
+            // 곡 전환 중 중단은 무시
+            if(err && err.name === "AbortError") return;
 
-            // 다른 곡으로 바꾸면서 생기는 중단은 무시
-            if(err && err.name === "AbortError")
+            // 백그라운드에서 브라우저가 자동 재생을 막은 경우:
+            // 연속 재생은 유지하고, 잠금화면 ▶ 버튼으로 이어서 재생
+            if(err && err.name === "NotAllowedError"){
+                setPlaybackState("paused");
                 return;
-
-            autoPlay = false;
-
-            alert(
-                currentNumber +
-                "장 음원 파일이 없어 재생을 멈춥니다."
-            );
+            }
+            // 그 외(파일 없음 등)는 error 이벤트에서 처리
         });
 }
 
-// 다음 장으로 넘어가서 계속 재생
+// 장 이동 후 바로 재생 (잠금화면 이전/다음 버튼용)
+function skip(delta){
+    const n = currentNumber + delta;
+    if(n < 1 || n > 803) return;
+    currentNumber = n;
+    document.getElementById("number").value = n;
+    openHymn(n);
+    autoPlay = true;
+    errorRetry = 0;
+    playCurrent();
+}
+
+// 한 곡이 끝나면 다음 장으로
 function playNext(){
 
     if(!autoPlay) return;
 
-    // 마지막 장이면 종료
     if(currentNumber >= 803){
-
         autoPlay = false;
-
         return;
     }
 
-    currentNumber++;
-
-    document
-    .getElementById("number")
-    .value =
-    currentNumber;
-
-    // 가사/악보 갱신 (재생은 끊지 않는 openHymn 사용)
-    openHymn(currentNumber);
-
-    playCurrent();
+    skip(1);
 }
 
 function stopHymn(){
@@ -457,11 +548,11 @@ function stopHymn(){
     autoPlay = false;
 
     if(audio){
-
         audio.pause();
-
         audio.currentTime = 0;
     }
+
+    setPlaybackState("paused");
 }
 
 // ===== 스와이프 기능 =====
@@ -525,3 +616,4 @@ function handleSwipe(){
 
 </body>
 </html>
+
